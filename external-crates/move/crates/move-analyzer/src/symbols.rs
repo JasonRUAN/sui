@@ -372,15 +372,15 @@ pub struct UseDefMap(BTreeMap<u32, BTreeSet<UseDef>>);
 #[derive(Clone)]
 pub struct Symbols {
     /// A map from def locations to all the references (uses)
-    references: BTreeMap<DefLoc, BTreeSet<UseLoc>>,
+    pub references: BTreeMap<DefLoc, BTreeSet<UseLoc>>,
     /// A mapping from uses to definitions in a file
-    file_use_defs: BTreeMap<PathBuf, UseDefMap>,
+    pub file_use_defs: BTreeMap<PathBuf, UseDefMap>,
     /// A mapping from filePath to ModuleDefs
     pub file_mods: BTreeMap<PathBuf, BTreeSet<ModuleDefs>>,
     /// Mapped file information for translating locations into positions
     pub files: MappedFiles,
     /// Additional information about definitions
-    def_info: BTreeMap<DefLoc, DefInfo>,
+    pub def_info: BTreeMap<DefLoc, DefInfo>,
     /// IDE Annotation Information from the Compiler
     pub compiler_info: CompilerInfo,
 }
@@ -416,6 +416,32 @@ impl ModuleDefs {
 
     pub fn ident(&self) -> &ModuleIdent_ {
         &self.ident
+    }
+}
+
+impl fmt::Display for UseDef {
+    fn fmt(&self, f: &mut fmt::Formatter) -> std::fmt::Result {
+        let UseDef {
+            col_start,
+            col_end,
+            def_loc,
+            type_def_loc,
+        } = self;
+        write!(f, "start: {col_start}, end: {col_end}, ")?;
+        let DefLoc {
+            fhash: _,
+            start: Position { line, character },
+        } = def_loc;
+        write!(f, "def line: {line}, def char: {character}, ")?;
+        if let Some(ty_info) = type_def_loc {
+            let DefLoc {
+                fhash: _,
+                start: Position { line, character },
+            } = ty_info;
+            write!(f, "ty def line: {line}, ty def char: {character}, ")
+        } else {
+            write!(f, "no ty info")
+        }
     }
 }
 
