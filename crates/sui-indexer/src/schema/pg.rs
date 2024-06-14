@@ -1,5 +1,3 @@
-// Copyright (c) Mysten Labs, Inc.
-// SPDX-License-Identifier: Apache-2.0
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
@@ -53,6 +51,74 @@ diesel::table! {
         total_stake_rewards_distributed -> Nullable<Int8>,
         leftover_storage_fund_inflow -> Nullable<Int8>,
         epoch_commitments -> Nullable<Bytea>,
+    }
+}
+
+diesel::table! {
+    event_emit_module (package, module, tx_sequence_number, event_sequence_number) {
+        package -> Bytea,
+        module -> Text,
+        tx_sequence_number -> Int8,
+        event_sequence_number -> Int8,
+        sender -> Bytea,
+    }
+}
+
+diesel::table! {
+    event_emit_package (package, tx_sequence_number, event_sequence_number) {
+        package -> Bytea,
+        tx_sequence_number -> Int8,
+        event_sequence_number -> Int8,
+        sender -> Bytea,
+    }
+}
+
+diesel::table! {
+    event_senders (sender, tx_sequence_number, event_sequence_number) {
+        sender -> Bytea,
+        tx_sequence_number -> Int8,
+        event_sequence_number -> Int8,
+    }
+}
+
+diesel::table! {
+    event_struct_module (package, module, tx_sequence_number, event_sequence_number) {
+        package -> Bytea,
+        module -> Text,
+        tx_sequence_number -> Int8,
+        event_sequence_number -> Int8,
+        sender -> Bytea,
+    }
+}
+
+diesel::table! {
+    event_struct_name (package, module, type_name, tx_sequence_number, event_sequence_number) {
+        package -> Bytea,
+        module -> Text,
+        type_name -> Text,
+        tx_sequence_number -> Int8,
+        event_sequence_number -> Int8,
+        sender -> Bytea,
+    }
+}
+
+diesel::table! {
+    event_struct_package (package, tx_sequence_number, event_sequence_number) {
+        package -> Bytea,
+        tx_sequence_number -> Int8,
+        event_sequence_number -> Int8,
+        sender -> Bytea,
+    }
+}
+
+diesel::table! {
+    event_struct_type (package, module, full_name, tx_sequence_number, event_sequence_number) {
+        package -> Bytea,
+        module -> Text,
+        full_name -> Text,
+        tx_sequence_number -> Int8,
+        event_sequence_number -> Int8,
+        sender -> Bytea,
     }
 }
 
@@ -192,7 +258,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    packages (package_id) {
+    packages (package_id, original_id, package_version) {
         package_id -> Bytea,
         original_id -> Bytea,
         package_version -> Int8,
@@ -234,37 +300,37 @@ diesel::table! {
 }
 
 diesel::table! {
-    tx_calls_pkg (package, tx_sequence_number) {
-        package -> Bytea,
+    tx_calls_fun (package, module, func, tx_sequence_number) {
         tx_sequence_number -> Int8,
+        package -> Bytea,
+        module -> Text,
+        func -> Text,
         sender -> Bytea,
     }
 }
 
 diesel::table! {
     tx_calls_mod (package, module, tx_sequence_number) {
+        tx_sequence_number -> Int8,
         package -> Bytea,
         module -> Text,
-        tx_sequence_number -> Int8,
         sender -> Bytea,
     }
 }
 
 diesel::table! {
-    tx_calls_fun (package, module, func, tx_sequence_number) {
-        package -> Bytea,
-        module -> Text,
-        func -> Text,
+    tx_calls_pkg (package, tx_sequence_number) {
         tx_sequence_number -> Int8,
-        sender -> Bytea
+        package -> Bytea,
+        sender -> Bytea,
     }
 }
 
 diesel::table! {
     tx_changed_objects (object_id, tx_sequence_number) {
-        object_id -> Bytea,
         tx_sequence_number -> Int8,
-        sender -> Bytea
+        object_id -> Bytea,
+        sender -> Bytea,
     }
 }
 
@@ -277,32 +343,31 @@ diesel::table! {
 
 diesel::table! {
     tx_input_objects (object_id, tx_sequence_number) {
-        object_id -> Bytea,
         tx_sequence_number -> Int8,
-        sender -> Bytea
+        object_id -> Bytea,
+        sender -> Bytea,
     }
 }
 
 diesel::table! {
-    tx_senders (sender, tx_sequence_number) {
-        sender -> Bytea,
+    tx_kinds (tx_kind, tx_sequence_number) {
         tx_sequence_number -> Int8,
+        tx_kind -> Int2,
     }
 }
 
 diesel::table! {
     tx_recipients (recipient, tx_sequence_number) {
-        recipient -> Bytea,
         tx_sequence_number -> Int8,
-        sender -> Bytea
+        recipient -> Bytea,
+        sender -> Bytea,
     }
-
 }
 
 diesel::table! {
-    tx_kinds (tx_kind, tx_sequence_number) {
-        tx_kind -> Int2,
+    tx_senders (sender, tx_sequence_number) {
         tx_sequence_number -> Int8,
+        sender -> Bytea,
     }
 }
 
@@ -323,7 +388,9 @@ macro_rules! for_all_tables {
             packages,
             transactions,
             transactions_partition_0,
-            tx_calls,
+            tx_calls_fun,
+            tx_calls_mod,
+            tx_calls_pkg,
             tx_changed_objects,
             tx_digests,
             tx_input_objects,
