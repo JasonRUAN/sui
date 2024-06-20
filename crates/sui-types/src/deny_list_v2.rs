@@ -78,6 +78,27 @@ impl MoveTypeTagTrait for AddressKey {
     }
 }
 
+/// Rust representation of the Move type 0x2::deny_list::GlobalPauseKey.
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct GlobalPauseKey;
+
+impl GlobalPauseKey {
+    pub fn type_() -> StructTag {
+        StructTag {
+            address: SUI_FRAMEWORK_PACKAGE_ID.into(),
+            module: DENY_LIST_MODULE.to_owned(),
+            name: ident_str!("GlobalPauseKey").to_owned(),
+            type_params: vec![],
+        }
+    }
+}
+
+impl MoveTypeTagTrait for GlobalPauseKey {
+    fn get_type_tag() -> TypeTag {
+        TypeTag::Struct(Box::new(Self::type_()))
+    }
+}
+
 pub fn check_coin_deny_list_v2_during_signing(
     address: SuiAddress,
     input_objects: &CheckedInputObjects,
@@ -86,10 +107,12 @@ pub fn check_coin_deny_list_v2_during_signing(
 ) -> UserInputResult {
     let coin_types = input_object_coin_types_for_denylist_check(input_objects, receiving_objects);
     for coin_type in coin_types {
-        // TODO: Check global pause flag.
         let Some(deny_list) = get_per_type_coin_deny_list_v2(&coin_type, object_store) else {
             return Ok(());
         };
+        if check_coin_global_pause(&deny_list, object_store, None) {
+            return Err(UserInputError::CoinTypeGlobalPause { coin_type });
+        }
         if check_address_denied_by_coin(&deny_list, address, object_store, None) {
             return Err(UserInputError::AddressDeniedForCoin { address, coin_type });
         }
@@ -122,6 +145,16 @@ pub fn check_address_denied_by_coin(
 ) -> bool {
     let address_key = AddressKey(address);
     read_config_setting(object_store, coin_deny_config, address_key, cur_epoch).unwrap_or(false)
+}
+
+pub fn check_coin_global_pause(
+    coin_deny_config: &Config,
+    object_store: &dyn ObjectStore,
+    cur_epoch: Option<EpochId>,
+) -> bool {
+    let global_pause_key = GlobalPauseKey;
+    read_config_setting(object_store, coin_deny_config, global_pause_key, cur_epoch)
+        .unwrap_or(false)
 }
 
 /// Read the setting value from the config object in the object store for the given setting name.
